@@ -22,7 +22,8 @@ class DataPreprocessor():
         self.pretreated_data_path = output_file
         self.individual_name_column = "name"
         self.background_knowledge_column = "public_knowledge"
-        self.dev_set_column_name = "dev_abstract"
+        self.original_abstract_column = "original_abstract"
+        self.anonymized_abstract_column = "spacy_abstract"
         self.load_saved_pretreatment = True
         self.add_non_saved_anonymizations = True
         self.anonymize_background_knowledge = True
@@ -95,6 +96,13 @@ class DataPreprocessor():
         if verbose:
             self.show_data_stats(self.train_df, self.eval_dfs, self.no_eval_individuals, self.no_train_individuals, self.eval_individuals)
 
+        if self.anonymized_abstract_column not in self.eval_dfs:
+            self.spacy_nlp = self.load_spacy_nlp()
+            abstract_df = self.eval_dfs[self.original_abstract_column]
+            abstract_df = self.anonymize_df(abstract_df, self.spacy_nlp)
+            abstract_df.rename(columns={self.original_abstract_column: self.anonymized_abstract_column}, inplace=True)
+            self.eval_dfs[self.anonymized_abstract_column] = abstract_df
+
         if (self.anonymize_background_knowledge or self.use_document_curation) and not self.pretreated_data_loaded:
             if self.anonymize_background_knowledge:
                 self.train_df = self.anonymize_bk(self.train_df)
@@ -117,9 +125,7 @@ class DataPreprocessor():
             raise Exception(f"Dataframe does not contain the individual name column {self.individual_name_column}")
         if not self.background_knowledge_column in data_df.columns:
             raise Exception(f"Dataframe does not contain the background knowledge column {self.background_knowledge_column}")
-        if self.dev_set_column_name is not False and not self.dev_set_column_name in data_df.columns:
-            raise Exception(f"Dataframe does not contain the dev set column {self.dev_set_column_name}")
-        
+
         anon_cols = [col_name for col_name in data_df.columns if not col_name in [self.individual_name_column, self.background_knowledge_column]]        
         if len(anon_cols) == 0:
             raise Exception(f"Dataframe does not contain columns with texts to re-identify, only individual name and background knowledge columns")
@@ -143,8 +149,7 @@ class DataPreprocessor():
         train_individuals = set(train_df[self.individual_name_column])
         eval_individuals = set()
         for name, eval_df in eval_dfs.items():
-            if name != self.dev_set_column_name: # Exclude dev_set from these statistics
-                eval_individuals.update(set(eval_df[self.individual_name_column]))
+            eval_individuals.update(set(eval_df[self.individual_name_column]))
         all_individuals = train_individuals.union(eval_individuals)
         no_train_individuals = eval_individuals - train_individuals
         no_eval_individuals = train_individuals - eval_individuals
@@ -176,6 +181,10 @@ class DataPreprocessor():
         if self.spacy_nlp is None:
             self.spacy_nlp = en_core_web_lg.load()
         return self.spacy_nlp
+
+    def anonymize_abstract(self, train_df:pd.DataFrame) -> pd.DataFrame:
+        spacy_nlp = self.load_spacy_nlp()        
+        return self.anonymize_df(train_df, spacy_nlp)
 
     def anonymize_bk(self, train_df:pd.DataFrame) -> pd.DataFrame:
         spacy_nlp = self.load_spacy_nlp()        
@@ -253,6 +262,7 @@ class DataPreprocessor():
         eval_dfs = OrderedDict([(name, pd.read_json(StringIO(df_json))) for name, df_json in eval_dfs_jsons.items()])
 
         return train_df, eval_dfs
+    
 
 if __name__ == "__main__":
     import argparse
@@ -268,5 +278,6 @@ if __name__ == "__main__":
     logging.info("Data preprocessing completed successfully.")
 
     train_df, eval_dfs = data_preprocessor.load_pretreatment()
+    eval_df = eval_dfs[data_preprocessor.anonymized_abstract_column]
     print(train_df.head())
-    print(eval_dfs["spacy_abstract"].head())
+    print(eval_df.head())

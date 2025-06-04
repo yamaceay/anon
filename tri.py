@@ -9,14 +9,14 @@ import random
 import os
 import numpy as np
 
-random.seed(42)  # Set random seed for reproducibility
-
 from sentence_transformers import SentenceTransformer, InputExample, losses, evaluation
 from sentence_transformers.models import Transformer, Pooling
 from sentence_transformers.training_args import SentenceTransformerTrainingArguments
 
 import logging
 logging.basicConfig(format='%(asctime)s %(levelname)-8s %(message)s', level=logging.INFO) # Configure logging
+
+random.seed(42)  # Set random seed for reproducibility
 
 device = (
     torch.device("cuda") if torch.cuda.is_available() else 
@@ -50,6 +50,10 @@ class SBERTTrainer:
         self.model_name = 'sentence-transformers/all-MiniLM-L6-v2'
         self.device = device
         self.model = SentenceTransformer(self.model_name, device=self.device)
+
+        self.individual_name_column = 'name'
+        self.background_knowledge_column = 'public_knowledge'
+        self.selected_anonymized_columns = ['spacy_abstract']
 
         self.checkpoint_dir = checkpoint_dir
         self.input_file = input_file
@@ -86,8 +90,8 @@ class SBERTTrainer:
         train_list = json.loads(StringIO(train_df_json_str).read())
         pairs = []
         for row in train_list:
-            name = row.pop('name')
-            public_knowledge = row.pop('public_knowledge')
+            name = row.pop(self.individual_name_column)
+            public_knowledge = row.pop(self.background_knowledge_column)
             pairs.append(InputExample(texts=[name, public_knowledge], label=1.0))
 
         eval_pairs_dict = {}
@@ -135,10 +139,9 @@ class SBERTTrainer:
         semi_hard_negatives = self.sample_semi_hard_negatives()
         self.train_pairs.extend(semi_hard_negatives)
 
-        selected_evals = list(self.eval_pairs_dict.keys())
         if self.eval_data_for_training:
             for column, eval_pairs in self.eval_pairs_dict.items():
-                if column in selected_evals:
+                if column in self.selected_anonymized_columns:
                     self.train_pairs.extend(eval_pairs)
 
         print(f"Before training, evaluating model on training data...")
@@ -149,7 +152,7 @@ class SBERTTrainer:
         if self.validate_model and not self.eval_data_for_training:
             selected_eval_pairs = []
             for key, eval_pairs in self.eval_pairs_dict.items():
-                if key in selected_evals:
+                if key in self.selected_anonymized_columns:
                     selected_eval_pairs.extend(eval_pairs)
             evaluator = get_evaluator(selected_eval_pairs, "eval")
             
@@ -186,7 +189,7 @@ if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description="Train a SentenceTransformer model for RAG.")
     parser.add_argument('--input-file', '-i', type=str, default='data/wiki_toy_done.json', help='Path to the input data file.')
-    parser.add_argument('--checkpoint-dir', '-o', type=str, default='outputs/rag_model', help='Directory to save the model checkpoints.')
+    parser.add_argument('--checkpoint-dir', '-o', type=str, default='outputs/sbert_model', help='Directory to save the model checkpoints.')
     args = parser.parse_args()
 
     sbert_trainer = SBERTTrainer(args.input_file, args.checkpoint_dir)

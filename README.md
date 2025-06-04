@@ -70,25 +70,32 @@ Our FAISS-based approach offers:
 
 Requires Python 3.8 or later:
 
-```sh
-pip install -r requirements.txt
+```bash
+pip3 install -r requirements.txt
+```
+
+```bash
+# uv init anonymizer # Initialize the project with uv
+uv venv .venv # Create a virtual environment
+source .venv/bin/activate # Activate the virtual environment
+uv pip install -r requirements.txt # Install dependencies
 ```
 
 ## Usage
 
 Data Preprocessing:
 ```sh
-python -m data [-i <path_to_input_data>] [-o <path_to_processed_data>]
+[uv run] python -m data [-i <path_to_input_data>] [-o <path_to_processed_data>]
 ```
 
 Model Training:
 ```sh
-python -m tri [-i <path_to_processed_data>] [-o <path_to_sbert_model>]
+[uv run] python -m tri [-i <path_to_processed_data>] [-o <path_to_sbert_model>]
 ```
 
 Framework Execution:
 ```sh
-python -m petre [-i <path_to_processed_data>] [-s <path_to_sbert_model>] [-o <path_to_output_data>]
+[uv run] python -m petre [-i <path_to_processed_data>] [-s <path_to_sbert_model>] [-o <path_to_output_data>]
 ```
 
 ## Credits
