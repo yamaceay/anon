@@ -2,33 +2,31 @@
 
 *by Yamaç Eren Ay*
 
-Welcome to K-Anonymizer, a framework designed to protect sensitive textual data by systematically anonymizing content while maintaining its utility. This tool is particularly useful for handling medical records, patient notes, and other confidential documents.
+This is a Proof of Concept for K-Anonymization designed to protect sensitive textual data by systematically anonymizing content while maintaining its utility. This tool could be particularly useful for handling medical records, patient notes, and other confidential documents.
 
 ## Introduction
 
-K-Anonymizer ensures that sensitive documents remain private yet useful by employing advanced text re-identification (TRI) techniques. The framework guarantees that entities within documents cannot be easily re-identified by requiring at least k attempts for successful identification, where k is a parameter you can configure.
+This K-Anonymizer ensures that sensitive documents remain private yet useful by employing advanced text re-identification (TRI) techniques. The framework guarantees that entities within documents cannot be easily re-identified by requiring at least k attempts for successful identification, where k is a parameter you can configure.
 
 ### Use Case Example
 
-Consider a cloud provider serving multiple hospitals as customers. Each hospital maintains isolated subaccounts containing sensitive documents such as medical records. K-Anonymizer ensures that even if someone attempts to re-identify an entity within these documents, they would need at least k attempts to succeed, effectively protecting patient privacy while maintaining document usefulness.
+Consider a cloud provider serving multiple hospitals as customers, which wants to effectively protect patient privacy while maintaining document usefulness. Each hospital maintains isolated subaccounts containing sensitive documents such as medical records. The challenge is to ensure that even if someone (with background knowledge of all people) attempts to re-identify a person within these records, they would need at least k guesses.
 
-### Key Features
-
-- Isolated Subaccount Security: Process each customer's documents independently to prevent data leakage and cross-customer contamination
-- Configurable Anonymization: Set your preferred minimum re-identification rank (k) to control privacy levels
-- Explainable Results: Utilize SHAP and other methods to identify Most Disclosive Tokens (MDTs) for targeted protection
+We outline a system that respects the following principles:
+- *Isolated Subaccount Security*: Process each customer's records independently to prevent data leakage and cross-customer contamination. Background knowledge of one customer is available to the attacker, but the attacker cannot find out which customer a document belongs to.
+- *Configurable Anonymization*: Set your preferred minimum re-identification rank (k) to control privacy levels. Achieve this by utilizing some explainability methods to identify Most Disclosive Tokens (MDTs) for targeted protection.
 
 ### Re-Identification Protection
 
-We implement two main approaches for protection against text re-identification:
-1. Baseline BERT TRI: Uses hard-coded labels with pre-trained entity embeddings
-2. FAISS + Sentence Transformers: Implements a flexible, scalable approach using efficient vector database storage
+Two main approaches are tested for protection against text re-identification:
+1. Baseline BERT TRI: Uses hard-coded labels with pre-trained entity embeddings. This was used in the original PETRE framework.
+2. New RAG-based SBERT TRI: Implements a flexible, scalable approach using efficient vector database storage.
 
 ### Training Methodology
 
-Our system employs two primary training approaches:
-1. Self-Supervised Contrastive Learning to develop optimal embedding spaces
-2. Optional SFT & RLHF for fine-tuning and continuous improvement
+The system employs two primary training approaches:
+1. *Self-Supervised Contrastive Learning* to develop optimal embedding spaces which learn to distinguish between different entities and documents.
+2. *Optional SFT & RLHF* for fine-tuning and continuous improvement, allowing the model to adapt further to specific domains or datasets.
 
 ### System Operation
 
@@ -39,7 +37,7 @@ Our system employs two primary training approaches:
 
 2. Anonymization Process:
     - Check if ranking meets required k-anonymity level
-    - Identify and modify most disclosive elements if needed
+    - Identify and mask / modify most disclosive elements if needed
     - Repeat until adequate protection is achieved
 
 3. Quality Assurance:
@@ -48,12 +46,12 @@ Our system employs two primary training approaches:
 
 ### Advantages Over Traditional Methods
 
-Traditional BERT-based NER models have limitations:
+Traditional BERT-based NER models have some limitations:
 - Require complete retraining for new entities
 - Inflexible due to hard-coded label positions
 - Need extensive domain-specific preprocessing
 
-Our FAISS-based approach offers:
+This RAG-based approach offers:
 - Combined document and entity embeddings
 - Efficient semantic space mapping
 - Dynamic updates without complete retraining
@@ -62,17 +60,20 @@ Our FAISS-based approach offers:
 
 | Aspect | Details |
 |--------|----------|
-| Data Handling | Careful management required for large datasets due to quadratic scaling |
-| Privacy Boundaries | Separate models recommended unless data overlap exists |
-| Model Updates | Optional continuous learning available but resource-intensive |
+| Data Handling | Careful management required for large datasets due to quadratic scaling, e.g. 1k entities requiring 1M pairwise relationships to be learnt |
+| Privacy Boundaries | Separate models recommended unless data overlap exists, e.g. two hospitals with 95% patients in common |
 
 ## Installation
 
 Requires Python 3.8 or later:
 
+Either using standard Python tools:
+
 ```bash
 pip3 install -r requirements.txt
 ```
+
+Or using [uv](https://github.com/astral-sh/uv):
 
 ```bash
 # uv init anonymizer # Initialize the project with uv
