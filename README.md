@@ -1,6 +1,7 @@
 # K-Anonymizer
 
-Research conducted by [Yamaç Eren Ay](https://github.com/yamaceay) and [Elena Pervova](https://github.com/ctsndtrvls)
+Authors: [Yamaç Eren Ay](https://github.com/yamaceay) and [Elena Pervova](https://github.com/ctsndtrvls).
+Supervisor: [Ibrahim Baroud]((https://github.com/beroibra)
 
 This is a Proof of Concept for K-Anonymization designed to protect sensitive textual data by systematically anonymizing content while maintaining its utility. This tool could be particularly useful for handling medical records, patient notes, and other confidential documents.
 
